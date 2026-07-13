@@ -1,0 +1,21 @@
+{
+  "name": "tabungan-bareng-bot",
+  "version": "2.0.0",
+  "description": "Telegram bot tabungan bareng pacar (webhook + Vercel, bukan polling + Railway lagi)",
+  "main": "lib/bot.js",
+  "scripts": {
+    "dev": "node -r dotenv/config dev-local.js",
+    "dev:watch": "nodemon -r dotenv/config dev-local.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
