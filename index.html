@@ -2,136 +2,327 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💕 Tabungan Bareng</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tabungan Bareng</title>
 <style>
   :root {
-    --pink: #e8558a;
-    --pink-dark: #c73d70;
-    --bg: #fdf2f6;
+    --accent: #e8497a;
+    --accent-dim: #fce4ec;
+    --bg: #f7f6f9;
     --card: #ffffff;
-    --text: #2b2230;
-    --muted: #8a7d8a;
-    --track: #f2dce6;
+    --text: #1c1b1f;
+    --muted: #75727d;
+    --border: #ebe8ef;
+    --track: #f0edf3;
+    --danger: #d64545;
+    --ok: #1f9d55;
+    --shadow: 0 1px 2px rgba(20,16,30,0.04), 0 6px 20px rgba(20,16,30,0.06);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent: #f0658c;
+      --accent-dim: #3a1f2a;
+      --bg: #131217;
+      --card: #1c1b22;
+      --text: #f1eef4;
+      --muted: #9a96a3;
+      --border: #2c2a33;
+      --track: #29262f;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
   }
   * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; }
   body {
-    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--text); padding-bottom: 40px;
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  header {
-    background: linear-gradient(135deg, var(--pink), var(--pink-dark));
-    color: white; padding: 24px 16px; text-align: center;
-  }
-  header h1 { margin: 0; font-size: 1.4rem; }
-  main { max-width: 480px; margin: 0 auto; padding: 16px; }
-  section.card {
-    background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
-  section.card h2 { margin: 0 0 12px; font-size: 1.05rem; }
-  .person-row { margin-bottom: 12px; }
-  .person-row:last-child { margin-bottom: 0; }
-  .person-row .label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; }
-  .person-row .label b { color: var(--pink-dark); }
-  .bar { height: 10px; background: var(--track); border-radius: 6px; overflow: hidden; }
-  .bar > div { height: 100%; background: var(--pink); border-radius: 6px; transition: width .3s; }
-  .total-row { display: flex; justify-content: space-between; font-weight: 700; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--track); }
-  .empty { color: var(--muted); text-align: center; padding: 12px 0; font-size: 0.9rem; }
-  .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--track); gap: 8px; }
-  .tx-item:last-child { border-bottom: none; }
-  .tx-info b { display: block; }
-  .tx-info small { color: var(--muted); }
-  .tx-del { background: none; border: none; color: #c0392b; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; }
-  .stat-line { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 4px 0; }
-  .stat-line span:last-child { font-weight: 600; }
-  form.inline { display: flex; flex-direction: column; gap: 8px; }
-  input, button {
-    font-size: 0.95rem; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--track);
-    font-family: inherit;
-  }
-  input:focus { outline: 2px solid var(--pink); border-color: transparent; }
-  button.primary {
-    background: var(--pink); color: white; border: none; font-weight: 600; cursor: pointer;
-  }
-  button.primary:active { background: var(--pink-dark); }
-  .msg { font-size: 0.85rem; text-align: center; min-height: 1.2em; margin-top: 6px; }
-  .msg.error { color: #c0392b; }
-  .msg.ok { color: #2a9d5c; }
+  button, input { font-family: inherit; }
 
+  /* ── Password gate ── */
   #gate {
-    position: fixed; inset: 0; background: var(--bg); z-index: 50;
-    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; padding: 20px;
+    position: fixed; inset: 0; z-index: 60; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
   }
-  #gate h1 { margin: 0 0 4px; }
-  #gate form { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
-  #app { display: none; }
+  #gate .box { width: 100%; max-width: 320px; text-align: center; }
+  #gate .box h1 { font-size: 1.3rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  #gate .box p { color: var(--muted); font-size: 0.9rem; margin: 0 0 20px; }
+  #gate form { display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── App shell ── */
+  #app { display: none; padding-bottom: 96px; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; max-width: 520px; margin: 0 auto;
+  }
+  .topbar .brand { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
+  .topbar .brand span { color: var(--accent); }
+  .icon-btn {
+    background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer;
+    width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { background: var(--track); }
+
+  main { max-width: 520px; margin: 0 auto; padding: 0 16px; }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(155deg, var(--accent), #c73d70 120%);
+    color: white; border-radius: 20px; padding: 24px 22px; box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .hero .hero-label { font-size: 0.8rem; opacity: 0.85; }
+  .hero .hero-amount { display: block; font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
+  .hero-target { margin-top: 16px; }
+  .hero-target .row { display: flex; justify-content: space-between; font-size: 0.78rem; opacity: 0.9; margin-bottom: 6px; }
+  .hero-bar { height: 8px; background: rgba(255,255,255,0.28); border-radius: 6px; overflow: hidden; }
+  .hero-bar > div { height: 100%; background: white; border-radius: 6px; transition: width .4s ease; }
+  .hero-people { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .chip {
+    background: rgba(255,255,255,0.16); border-radius: 999px; padding: 6px 12px; font-size: 0.78rem;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .chip b { font-weight: 700; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; background: var(--track); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .tab {
+    flex: 1; border: none; background: none; padding: 9px 8px; border-radius: 9px; font-size: 0.86rem;
+    color: var(--muted); font-weight: 600; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .tab.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .panel-title { font-size: 0.95rem; font-weight: 700; margin: 0 0 14px; }
+
+  .empty { color: var(--muted); text-align: center; padding: 28px 12px; font-size: 0.88rem; }
+
+  /* ── Riwayat ── */
+  .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-avatar {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+  }
+  .tx-row { display: flex; gap: 10px; align-items: center; min-width: 0; }
+  .tx-info { min-width: 0; }
+  .tx-info .main { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-info small { color: var(--muted); font-size: 0.78rem; }
+  .tx-amount { font-weight: 700; font-size: 0.92rem; white-space: nowrap; }
+  .tx-del { background: none; border: none; color: var(--muted); font-size: 1rem; cursor: pointer; padding: 6px; border-radius: 8px; flex-shrink: 0; }
+  .tx-del:hover { background: var(--track); color: var(--danger); }
+
+  /* ── Statistik ── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-tile { background: var(--track); border-radius: 12px; padding: 12px 14px; }
+  .stat-tile .k { font-size: 0.74rem; color: var(--muted); }
+  .stat-tile .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+  .person-stat { padding: 12px 0; border-top: 1px solid var(--border); }
+  .person-stat:first-child { border-top: none; }
+  .person-stat .label { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 8px; }
+  .person-stat .label b { font-weight: 700; }
+  .bar { height: 7px; background: var(--track); border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .bar > div { height: 100%; background: var(--accent); border-radius: 6px; transition: width .4s ease; }
+  .mini-stats { display: flex; gap: 14px; font-size: 0.78rem; color: var(--muted); flex-wrap: wrap; }
+  .mini-stats b { color: var(--text); }
+
+  /* ── Target ── */
+  .target-form { display: flex; gap: 8px; margin-top: 16px; }
+  .target-form input { flex: 1; }
+
+  /* ── Forms ── */
+  input {
+    font-size: 0.95rem; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); width: 100%;
+  }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  input::placeholder { color: var(--muted); }
+  button.primary {
+    background: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer;
+    padding: 11px 16px; border-radius: 11px; font-size: 0.92rem;
+  }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.ghost {
+    background: none; border: 1px solid var(--border); color: var(--text); font-weight: 600; cursor: pointer;
+    padding: 11px 16px; border-radius: 11px; font-size: 0.92rem;
+  }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed; right: 20px; bottom: 24px; width: 58px; height: 58px; border-radius: 50%;
+    background: var(--accent); color: white; border: none; font-size: 1.6rem; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(232,73,122,0.45); z-index: 20; display: flex; align-items: center; justify-content: center;
+  }
+  .fab:active { transform: scale(0.94); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,8,14,0.45); z-index: 40;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal {
+    background: var(--card); width: 100%; max-width: 480px; border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto;
+    animation: slideUp .22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-header h3 { margin: 0; font-size: 1.05rem; }
+  .mtabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .mtab {
+    flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
+    color: var(--muted); font-weight: 600; font-size: 0.86rem; cursor: pointer;
+  }
+  .mtab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  form.inline { display: flex; flex-direction: column; gap: 10px; }
+  .msg { font-size: 0.82rem; text-align: center; min-height: 1.2em; }
+  .msg.error { color: var(--danger); }
+  .msg.ok { color: var(--ok); }
+
+  /* ── Scan panel ── */
+  #scanDropzone {
+    border: 2px dashed var(--border); border-radius: 14px; padding: 28px 16px; text-align: center;
+    color: var(--muted); cursor: pointer; font-size: 0.88rem;
+  }
+  #scanDropzone:hover { border-color: var(--accent); color: var(--accent); }
+  #scanPreview { width: 100%; border-radius: 14px; margin-bottom: 12px; max-height: 260px; object-fit: cover; }
+  #scanStatus { text-align: center; font-size: 0.88rem; color: var(--muted); margin-top: 10px; }
+  .spinner {
+    width: 18px; height: 18px; border: 2.5px solid var(--track); border-top-color: var(--accent);
+    border-radius: 50%; display: inline-block; animation: spin .7s linear infinite; vertical-align: -4px; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(0);
+    background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-size: 0.86rem;
+    z-index: 80; box-shadow: var(--shadow); max-width: 90vw;
+  }
+  #toast[hidden] { display: none; }
 </style>
 </head>
 <body>
 
 <div id="gate">
-  <h1>💕 Tabungan Bareng</h1>
-  <form id="gateForm">
-    <input type="password" id="gatePassword" placeholder="Password" autofocus required>
-    <button type="submit" class="primary">Buka</button>
-    <div class="msg error" id="gateMsg"></div>
-  </form>
+  <div class="box">
+    <h1>💕 Tabungan Bareng</h1>
+    <p>Masukin password buat buka dashboard</p>
+    <form id="gateForm">
+      <input type="password" id="gatePassword" placeholder="Password" autofocus required>
+      <button type="submit" class="primary">Buka Dashboard</button>
+      <div class="msg error" id="gateMsg"></div>
+    </form>
+  </div>
 </div>
 
 <div id="app">
-  <header><h1>💕 Tabungan Bareng</h1></header>
-  <main>
+  <div class="topbar">
+    <div class="brand">💕 <span>Tabungan</span> Bareng</div>
+    <button class="icon-btn" id="logoutBtn" title="Ganti password">⎋</button>
+  </div>
 
-    <section class="card" id="saldoCard">
-      <h2>📊 Saldo</h2>
-      <div id="saldoBody"></div>
+  <main>
+    <section class="hero" id="heroCard">
+      <span class="hero-label">Total Saldo</span>
+      <span class="hero-amount" id="heroTotal">—</span>
+      <div class="hero-target" id="heroTarget"></div>
+      <div class="hero-people" id="heroPeople"></div>
     </section>
 
-    <section class="card">
-      <h2>💰 Nabung</h2>
+    <nav class="tabs">
+      <button class="tab active" data-tab="riwayat">📋 Riwayat</button>
+      <button class="tab" data-tab="statistik">📈 Statistik</button>
+      <button class="tab" data-tab="target">🎯 Target</button>
+    </nav>
+
+    <section class="card tab-panel" id="panel-riwayat">
+      <h2 class="panel-title">Riwayat Transaksi</h2>
+      <div id="riwayatBody"></div>
+    </section>
+
+    <section class="card tab-panel" id="panel-statistik" hidden>
+      <h2 class="panel-title">Statistik</h2>
+      <div id="statistikBody"></div>
+    </section>
+
+    <section class="card tab-panel" id="panel-target" hidden>
+      <h2 class="panel-title">Target Tabungan</h2>
+      <div id="targetBody"></div>
+      <form class="inline target-form" id="targetForm">
+        <input type="text" id="targetNominal" placeholder="mis. 5jt" required>
+        <button type="submit" class="primary">Set</button>
+      </form>
+      <div class="msg" id="targetMsg"></div>
+    </section>
+  </main>
+
+  <button class="fab" id="fabNabung" title="Tambah tabungan">+</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Tambah Tabungan</h3>
+      <button class="icon-btn" id="modalClose">✕</button>
+    </div>
+    <div class="mtabs">
+      <button class="mtab active" data-mtab="manual">✏️ Manual</button>
+      <button class="mtab" data-mtab="scan">📸 Scan Foto</button>
+    </div>
+
+    <div id="mtab-manual">
       <form class="inline" id="nabungForm">
         <input type="text" id="nabungNominal" placeholder="Nominal, mis. 75rb atau 1jt" required>
         <input type="text" id="nabungNama" list="namaList" placeholder="Nama" required>
         <datalist id="namaList"></datalist>
         <input type="text" id="nabungKeterangan" placeholder="Keterangan (opsional)">
-        <button type="submit" class="primary">Simpan</button>
+        <button type="submit" class="primary" id="nabungSubmit">Simpan</button>
         <div class="msg" id="nabungMsg"></div>
       </form>
-    </section>
+    </div>
 
-    <section class="card">
-      <h2>📋 Riwayat</h2>
-      <div id="riwayatBody"></div>
-    </section>
-
-    <section class="card">
-      <h2>📈 Statistik</h2>
-      <div id="statistikBody"></div>
-    </section>
-
-    <section class="card">
-      <h2>🎯 Target</h2>
-      <div id="targetBody"></div>
-      <form class="inline" id="targetForm" style="margin-top:12px">
-        <input type="text" id="targetNominal" placeholder="Target baru, mis. 5jt" required>
-        <button type="submit" class="primary">Set Target</button>
-        <div class="msg" id="targetMsg"></div>
-      </form>
-    </section>
-
-  </main>
+    <div id="mtab-scan" hidden>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
+      <div id="scanDropzone">📸<br>Tap buat pilih atau foto struk/transfer</div>
+      <img id="scanPreview" hidden>
+      <div id="scanStatus"></div>
+    </div>
+  </div>
 </div>
+
+<div id="toast" hidden></div>
 
 <script>
 const IDR = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 const fmtDate = (iso) => new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 const parseAmount = (str) =>
   parseInt(String(str).toLowerCase().replace(/\./g, "").replace(/rb|ribu/g, "000").replace(/jt|juta/g, "000000").replace(/[^0-9]/g, ""));
+const initials = (s) => (s || "?").trim().slice(0, 2).toUpperCase();
 
 const PW_KEY = "tabungan_dashboard_password";
 const NAMA_KEY = "tabungan_dashboard_nama";
+let lastData = null;
 
+// ── toast ──
+let toastTimer;
+function toast(msg, kind = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.style.color = kind === "error" ? "var(--danger)" : "";
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+}
+
+// ── api wrapper ──
 async function api(path, opts = {}) {
   const res = await fetch(path, {
     ...opts,
@@ -153,97 +344,94 @@ function showGate(msg) {
 
 document.getElementById("gateForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const pw = document.getElementById("gatePassword").value;
-  localStorage.setItem(PW_KEY, pw);
+  localStorage.setItem(PW_KEY, document.getElementById("gatePassword").value);
   try {
     await loadDashboard();
     document.getElementById("gate").style.display = "none";
     document.getElementById("app").style.display = "block";
-  } catch (err) {
-    // showGate udah dipanggil dari dalam api() kalau 401
-  }
+  } catch (err) { /* showGate udah dipanggil di api() kalau 401 */ }
 });
 
-function renderSaldo(saldo) {
-  const el = document.getElementById("saldoBody");
-  if (saldo.empty) {
-    el.innerHTML = `<div class="empty">📭 Belum ada tabungan. Mulai dengan form Nabung di bawah!</div>`;
-    return;
-  }
-  let html = saldo.perOrang.map(p => `
-    <div class="person-row">
-      <div class="label"><span>👤 ${p.nama}</span><b>${IDR(p.total)} (${p.pct}%)</b></div>
-      <div class="bar"><div style="width:${p.pct}%"></div></div>
-    </div>
-  `).join("");
-  html += `<div class="total-row"><span>🏦 Total</span><span>${IDR(saldo.total)}</span></div>`;
-  if (saldo.target > 0) {
-    html += `
-      <div class="person-row" style="margin-top:12px">
-        <div class="label"><span>🎯 Target ${IDR(saldo.target)}</span><b>${saldo.targetPct}%</b></div>
-        <div class="bar"><div style="width:${saldo.targetPct}%"></div></div>
-        <div class="msg" style="text-align:left">Sisa ${IDR(saldo.sisa)}</div>
-      </div>`;
-  }
-  el.innerHTML = html;
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem(PW_KEY);
+  showGate();
+});
+
+// ── tabs ──
+document.querySelectorAll(".tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((p) => (p.hidden = true));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).hidden = false;
+  });
+});
+
+// ── render ──
+function renderHero(saldo) {
+  document.getElementById("heroTotal").textContent = IDR(saldo.total);
+  const targetEl = document.getElementById("heroTarget");
+  targetEl.innerHTML = saldo.target > 0 ? `
+    <div class="row"><span>Target ${IDR(saldo.target)}</span><span>${saldo.targetPct}%</span></div>
+    <div class="hero-bar"><div style="width:${saldo.targetPct}%"></div></div>
+  ` : "";
+  const peopleEl = document.getElementById("heroPeople");
+  peopleEl.innerHTML = saldo.empty ? "" : saldo.perOrang.map(p => `<div class="chip">${p.nama} <b>${IDR(p.total)}</b></div>`).join("");
 }
 
 function renderRiwayat(riwayat) {
   const el = document.getElementById("riwayatBody");
-  if (!riwayat.length) {
-    el.innerHTML = `<div class="empty">📭 Belum ada transaksi</div>`;
-    return;
-  }
+  if (!riwayat.length) { el.innerHTML = `<div class="empty">📭 Belum ada transaksi</div>`; return; }
   el.innerHTML = riwayat.map(t => `
     <div class="tx-item">
-      <div class="tx-info">
-        <b>${t.nama} · ${IDR(t.jumlah)}</b>
-        <small>${t.keterangan ? t.keterangan + " · " : ""}${fmtDate(t.created_at)}</small>
+      <div class="tx-row">
+        <div class="tx-avatar">${initials(t.nama)}</div>
+        <div class="tx-info">
+          <div class="main">${t.nama}${t.keterangan ? " · " + t.keterangan : ""}</div>
+          <small>${fmtDate(t.created_at)}</small>
+        </div>
       </div>
-      <button class="tx-del" data-id="${t.id}" title="Hapus">🗑</button>
+      <div style="display:flex;align-items:center;gap:2px">
+        <div class="tx-amount">${IDR(t.jumlah)}</div>
+        <button class="tx-del" data-id="${t.id}" title="Hapus">🗑</button>
+      </div>
     </div>
   `).join("");
-  el.querySelectorAll(".tx-del").forEach(btn => {
-    btn.addEventListener("click", () => hapusTransaksi(parseInt(btn.dataset.id)));
-  });
+  el.querySelectorAll(".tx-del").forEach((btn) => btn.addEventListener("click", () => hapusTransaksi(parseInt(btn.dataset.id))));
 }
 
 function renderStatistik(s) {
   const el = document.getElementById("statistikBody");
-  if (s.empty) {
-    el.innerHTML = `<div class="empty">📭 Belum ada data</div>`;
-    return;
-  }
-  let html = s.perOrang.map(p => `
-    <div class="person-row">
-      <div class="label"><span>👤 ${p.nama} (${p.pct}%)</span></div>
-      <div class="stat-line"><span>Total</span><span>${IDR(p.total)} · ${p.count}x</span></div>
-      <div class="stat-line"><span>Terbesar / Terkecil</span><span>${IDR(p.max)} / ${IDR(p.min)}</span></div>
-      <div class="stat-line"><span>Rata-rata</span><span>${IDR(p.avg)}</span></div>
+  if (s.empty) { el.innerHTML = `<div class="empty">📭 Belum ada data</div>`; return; }
+  let html = `<div class="stat-grid">
+    <div class="stat-tile"><div class="k">Rata-rata/hari</div><div class="v">${IDR(s.avgHarian)}</div></div>
+    <div class="stat-tile"><div class="k">Hari menabung</div><div class="v">${s.hariMenabung} hari</div></div>
+    <div class="stat-tile"><div class="k">Total transaksi</div><div class="v">${s.totalTransaksi}x</div></div>
+    <div class="stat-tile"><div class="k">Estimasi target</div><div class="v">${s.estimasiHari === null ? "—" : (s.estimasiHari > 0 ? s.estimasiHari + "h" : "🎉")}</div></div>
+  </div>`;
+  html += s.perOrang.map(p => `
+    <div class="person-stat">
+      <div class="label"><span>${p.nama}</span><b>${IDR(p.total)} · ${p.count}x</b></div>
+      <div class="bar"><div style="width:${p.pct}%"></div></div>
+      <div class="mini-stats">
+        <span>Terbesar <b>${IDR(p.max)}</b></span>
+        <span>Terkecil <b>${IDR(p.min)}</b></span>
+        <span>Rata-rata <b>${IDR(p.avg)}</b></span>
+      </div>
     </div>
-  `).join("<hr style='border:none;border-top:1px dashed var(--track);margin:10px 0'>");
-  html += `
-    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--track)">
-      <div class="stat-line"><span>Hari menabung</span><span>${s.hariMenabung} hari</span></div>
-      <div class="stat-line"><span>Rata-rata/hari</span><span>${IDR(s.avgHarian)}</span></div>
-      <div class="stat-line"><span>Total transaksi</span><span>${s.totalTransaksi}x</span></div>
-      ${s.estimasiHari !== null ? `<div class="stat-line"><span>Estimasi capai target</span><span>${s.estimasiHari > 0 ? s.estimasiHari + " hari lagi" : "Tercapai! 🎉"}</span></div>` : ""}
-    </div>`;
+  `).join("");
   el.innerHTML = html;
 }
 
 function renderTarget(t) {
   const el = document.getElementById("targetBody");
-  if (!t.isSet) {
-    el.innerHTML = `<div class="empty">Belum ada target. Set di form bawah.</div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div class="person-row">
-      <div class="label"><span>Target ${IDR(t.jumlah)}</span><b>${t.pct}%</b></div>
-      <div class="bar"><div style="width:${t.pct}%"></div></div>
-      <div class="msg" style="text-align:left">${t.sisa > 0 ? "Sisa " + IDR(t.sisa) : "Target tercapai! 🎉"}</div>
-    </div>`;
+  el.innerHTML = t.isSet ? `
+    <div class="label" style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:8px">
+      <span>Target ${IDR(t.jumlah)}</span><b>${t.pct}%</b>
+    </div>
+    <div class="bar"><div style="width:${t.pct}%"></div></div>
+    <div class="msg" style="text-align:left;margin-top:6px">${t.sisa > 0 ? "Sisa " + IDR(t.sisa) : "Target tercapai! 🎉"}</div>
+  ` : `<div class="empty">Belum ada target</div>`;
 }
 
 function updateNamaList(perOrang) {
@@ -252,39 +440,71 @@ function updateNamaList(perOrang) {
 
 async function loadDashboard() {
   const data = await api("/api/dashboard?limit=30");
-  renderSaldo(data.saldo);
+  lastData = data;
+  renderHero(data.saldo);
   renderRiwayat(data.riwayat);
   renderStatistik(data.statistik);
   renderTarget(data.target);
   updateNamaList(data.saldo.perOrang);
 }
 
+// ── modal ──
+const overlay = document.getElementById("modalOverlay");
+function openModal() {
+  overlay.hidden = false;
+  document.getElementById("nabungNama").value = localStorage.getItem(NAMA_KEY) || "";
+  document.getElementById("nabungMsg").textContent = "";
+}
+function closeModal() { overlay.hidden = true; resetScanUI(); }
+document.getElementById("fabNabung").addEventListener("click", openModal);
+document.getElementById("modalClose").addEventListener("click", closeModal);
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+document.querySelectorAll(".mtab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mtab").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const isManual = btn.dataset.mtab === "manual";
+    document.getElementById("mtab-manual").hidden = !isManual;
+    document.getElementById("mtab-scan").hidden = isManual;
+  });
+});
+function switchToManualTab() {
+  document.querySelector('.mtab[data-mtab="manual"]').click();
+}
+
+// ── nabung form ──
 document.getElementById("nabungForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById("nabungMsg");
+  const submitBtn = document.getElementById("nabungSubmit");
   const jumlah = parseAmount(document.getElementById("nabungNominal").value);
   const nama = document.getElementById("nabungNama").value.trim();
   const keterangan = document.getElementById("nabungKeterangan").value.trim();
   if (isNaN(jumlah) || jumlah <= 0) { msgEl.className = "msg error"; msgEl.textContent = "Nominal tidak valid"; return; }
   localStorage.setItem(NAMA_KEY, nama);
+  submitBtn.disabled = true;
   try {
     const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "nabung", nama, jumlah, keterangan }) });
     if (!res.ok) { msgEl.className = "msg error"; msgEl.textContent = res.error; return; }
-    msgEl.className = "msg ok"; msgEl.textContent = "Tersimpan!";
     document.getElementById("nabungForm").reset();
     document.getElementById("nabungNama").value = nama;
+    closeModal();
+    toast("✅ Tabungan tersimpan");
     await loadDashboard();
-  } catch (err) { /* 401 udah ditangani di api() */ }
+  } catch (err) { /* 401 udah ditangani */ }
+  finally { submitBtn.disabled = false; }
 });
 
 async function hapusTransaksi(id) {
   if (!confirm("Yakin mau hapus transaksi ini?")) return;
   try {
     const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "hapus", id }) });
-    if (res.ok) await loadDashboard();
-  } catch (err) { /* 401 udah ditangani di api() */ }
+    if (res.ok) { toast("🗑 Transaksi dihapus"); await loadDashboard(); }
+  } catch (err) { /* 401 udah ditangani */ }
 }
 
+// ── target form ──
 document.getElementById("targetForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById("targetMsg");
@@ -293,15 +513,84 @@ document.getElementById("targetForm").addEventListener("submit", async (e) => {
   try {
     const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "target", jumlah }) });
     if (!res.ok) { msgEl.className = "msg error"; msgEl.textContent = res.error; return; }
-    msgEl.className = "msg ok"; msgEl.textContent = "Target diperbarui!";
+    msgEl.className = "msg ok"; msgEl.textContent = "";
     document.getElementById("targetForm").reset();
+    toast("🎯 Target diperbarui");
     await loadDashboard();
-  } catch (err) { /* 401 udah ditangani di api() */ }
+  } catch (err) { /* 401 udah ditangani */ }
+});
+
+// ── scan foto ──
+const fileInput = document.getElementById("fileInput");
+const scanDropzone = document.getElementById("scanDropzone");
+const scanPreview = document.getElementById("scanPreview");
+const scanStatus = document.getElementById("scanStatus");
+
+scanDropzone.addEventListener("click", () => fileInput.click());
+
+function resetScanUI() {
+  fileInput.value = "";
+  scanPreview.hidden = true;
+  scanStatus.innerHTML = "";
+  scanDropzone.hidden = false;
+}
+
+function resizeImageToJpegBase64(file, maxDim = 1280, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read_failed"));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("decode_failed"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files?.[0];
+  if (!file) return;
+
+  scanDropzone.hidden = true;
+  scanStatus.innerHTML = `<span class="spinner"></span>Membaca gambar...`;
+
+  try {
+    const dataUrl = await resizeImageToJpegBase64(file);
+    scanPreview.src = dataUrl;
+    scanPreview.hidden = false;
+    scanStatus.innerHTML = `<span class="spinner"></span>Menganalisis nominal...`;
+
+    const base64 = dataUrl.split(",")[1];
+    const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "scan", image: base64, mimeType: "image/jpeg" }) });
+
+    if (!res.ok || !res.detected) {
+      scanStatus.innerHTML = `❌ Nominal tidak terdeteksi. Coba foto lebih jelas, atau isi manual.`;
+      return;
+    }
+
+    document.getElementById("nabungNominal").value = res.jumlah;
+    scanStatus.innerHTML = `✅ Terdeteksi <b>${IDR(res.jumlah)}</b> — cek & simpan di tab Manual`;
+    switchToManualTab();
+    document.getElementById("nabungKeterangan").focus();
+  } catch (err) {
+    if (err.message !== "unauthorized") scanStatus.innerHTML = `❌ Gagal membaca gambar. Coba lagi.`;
+  }
 });
 
 // ── init ──
 (function init() {
-  document.getElementById("nabungNama").value = localStorage.getItem(NAMA_KEY) || "";
   if (localStorage.getItem(PW_KEY)) {
     loadDashboard().then(() => {
       document.getElementById("gate").style.display = "none";

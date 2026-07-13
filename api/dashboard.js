@@ -1,7 +1,51 @@
 const { createClient } = require("@supabase/supabase-js");
+const https = require("https");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const PASSWORD = process.env.DASHBOARD_PASSWORD;
+const GEMINI_KEY = process.env.GEMINI_KEY;
+
+// Sama persis logic-nya kayak extractNominalFromImage di lib/bot.js, biar
+// hasil scan dari web dan dari Telegram konsisten.
+async function extractNominalFromImage(base64, mimeType) {
+  const prompt = `Kamu membantu tracking tabungan. Lihat gambar ini dan ekstrak nominal uang yang ditabung/ditransfer.
+
+Aturan:
+- Cari angka nominal transfer, pembayaran, atau tabungan
+- Abaikan biaya admin, saldo sebelumnya, atau saldo akhir
+- Kembalikan HANYA angka bulat tanpa titik/koma/Rp, contoh: 50000
+- Kalau ada beberapa nominal, ambil yang paling relevan (nominal transfer utama)
+- Kalau tidak ada nominal yang jelas, kembalikan: TIDAK_DITEMUKAN
+
+Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
+
+  const body = JSON.stringify({
+    contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64 } }, { text: prompt }] }],
+    generationConfig: { maxOutputTokens: 50, temperature: 0 },
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: "generativelanguage.googleapis.com",
+      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+    }, (res) => {
+      let data = "";
+      res.on("data", (c) => (data += c));
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "TIDAK_DITEMUKAN";
+          resolve(text);
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 // Browser punya nggak punya identitas Telegram, jadi transaksi/target yang
 // ditambah dari web harus "menumpang" chat_id yang udah dipakai bot —
@@ -128,6 +172,25 @@ async function handlePost(req, res) {
       if (error) return res.status(500).json({ ok: false, error: error.message });
     }
     return res.status(200).json({ ok: true });
+  }
+
+  if (body.action === "scan") {
+    if (!GEMINI_KEY) return res.status(500).json({ ok: false, error: "GEMINI_KEY belum diset" });
+    const image = String(body.image || "");
+    if (!image) return res.status(400).json({ ok: false, error: "image tidak ada" });
+    if (image.length > 8_000_000) return res.status(400).json({ ok: false, error: "gambar terlalu besar" });
+
+    try {
+      const result = await extractNominalFromImage(image, body.mimeType || "image/jpeg");
+      const jumlah = parseInt(result);
+      if (result === "TIDAK_DITEMUKAN" || isNaN(jumlah) || jumlah <= 0) {
+        return res.status(200).json({ ok: true, detected: false });
+      }
+      return res.status(200).json({ ok: true, detected: true, jumlah });
+    } catch (err) {
+      console.error("Scan error:", err);
+      return res.status(500).json({ ok: false, error: "scan_failed" });
+    }
   }
 
   return res.status(400).json({ ok: false, error: "unknown_action" });
