@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Tabungan Bareng</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#ba2f66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tabungan">
 <style>
   :root {
     --accent: #ba2f66;
@@ -281,7 +289,8 @@
 <div id="app">
   <div class="topbar">
     <div class="brand">💕 <span>Tabungan</span> Bareng</div>
-    <div style="display:flex;gap:4px">
+    <div style="display:flex;gap:4px;align-items:center">
+      <button class="ghost" id="installBtn" hidden style="padding:8px 12px;min-height:36px;font-size:0.8rem">📲 Install</button>
       <button class="icon-btn" id="refreshBtn" title="Refresh" aria-label="Refresh">⟳</button>
       <button class="icon-btn" id="logoutBtn" title="Ganti password" aria-label="Ganti password">⎋</button>
     </div>
@@ -426,6 +435,30 @@ document.getElementById("refreshBtn").addEventListener("click", async (e) => {
   toast("🔄 Diperbarui");
   e.currentTarget.style.animation = "";
 });
+
+// ── PWA: install prompt + service worker ──
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+let deferredInstallPrompt = null;
+const installBtn = document.getElementById("installBtn");
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isStandalone()) installBtn.hidden = false;
+});
+installBtn.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  installBtn.hidden = true;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+});
+window.addEventListener("appinstalled", () => { installBtn.hidden = true; });
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
 
 // ── tabs ──
 document.querySelectorAll(".tab").forEach((btn) => {

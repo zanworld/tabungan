@@ -34,6 +34,9 @@ tabungan-bot/
 ├── scripts/
 │   └── set-webhook.js     # jalanin SEKALI setelah deploy
 ├── index.html               # dashboard web (buka di root URL Vercel)
+├── manifest.json            # PWA manifest — biar bisa di-install jadi app di Android
+├── sw.js                    # service worker PWA (cache app shell, API tetap live)
+├── icons/                    # icon app (di-generate, bukan digambar manual)
 ├── dev-local.js            # buat testing lokal (mode polling)
 ├── schema.sql               # tabel lama (transaksi, target)
 ├── schema_webhook_addon.sql # tabel baru (bot_waiting, bot_mainmsg) — WAJIB dijalanin juga
@@ -105,6 +108,16 @@ Selain lewat Telegram, sekarang ada juga dashboard web-nya — bisa liat saldo/r
 3. Buka URL Vercel kamu di browser, masukin password itu sekali. Password ke-simpen di browser itu (localStorage) sampai kamu clear sendiri.
 
 Ini cuma satu password buat berdua (bukan akun per-orang) — cukup buat data pribadi berdua, jangan share password-nya ke orang lain karena siapapun yang tau bisa liat & ubah data tabungan kalian.
+
+### Install sebagai App di Android (PWA)
+
+Dashboard-nya sekarang bisa di-install jadi "app" beneran di HP Android — muncul icon 💗 di layar utama, buka full-screen tanpa address bar, kerasa kayak app biasa. Nggak perlu Play Store:
+
+1. Buka URL Vercel kamu di **Chrome** Android, login pakai password seperti biasa.
+2. Bakal muncul tombol **📲 Install** di pojok kanan atas dashboard — tap itu, konfirmasi, selesai. (Kalau tombolnya nggak muncul, buka menu titik-tiga Chrome → **Tambahkan ke layar Utama** / **Install app** manual.)
+3. Buka dari icon di layar utama — jalan full-screen kayak app native.
+
+Ini PWA (Progressive Web App), bukan file APK — jadi tetap 1 codebase yang sama dengan versi web/Vercel, update otomatis tiap kali kamu deploy ulang, nggak perlu build/install ulang apapun di HP.
 
 ---
 
