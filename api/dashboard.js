@@ -141,7 +141,7 @@ async function handlePost(req, res) {
     const nama = String(body.nama || "").trim();
     const jumlah = parseInt(body.jumlah);
     if (!nama || !Number.isInteger(jumlah) || jumlah <= 0) {
-      return res.status(400).json({ ok: false, error: "nama atau jumlah tidak valid" });
+      return res.status(400).json({ ok: false, error: "Nama atau nominal belum valid, coba cek lagi" });
     }
     const chatId = await resolveChatId();
     const keterangan = body.keterangan ? String(body.keterangan).trim() || null : null;
