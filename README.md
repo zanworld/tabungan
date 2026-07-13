@@ -27,11 +27,13 @@ Bot lama nyimpen "user ini lagi nunggu input apa" (`waiting`) dan "id pesan yang
 ```
 tabungan-bot/
 ├── api/
-│   └── webhook.js        # entry point Vercel — Telegram POST ke sini
+│   ├── webhook.js         # entry point Vercel — Telegram POST ke sini
+│   └── dashboard.js       # API buat dashboard web (saldo/riwayat/statistik/target + aksi)
 ├── lib/
 │   └── bot.js             # semua logic bot (handler, render, dsb)
 ├── scripts/
 │   └── set-webhook.js     # jalanin SEKALI setelah deploy
+├── index.html               # dashboard web (buka di root URL Vercel)
 ├── dev-local.js            # buat testing lokal (mode polling)
 ├── schema.sql               # tabel lama (transaksi, target)
 ├── schema_webhook_addon.sql # tabel baru (bot_waiting, bot_mainmsg) — WAJIB dijalanin juga
@@ -87,6 +89,22 @@ BOT_TOKEN=isi_token_kamu node scripts/set-webhook.js https://tabungan-bot-xxxx.v
 Muncul `✅ Webhook berhasil diset` → bot langsung aktif, coba `/start` di Telegram.
 
 > Kalau deploy ulang dengan URL yang SAMA (custom domain / domain default Vercel yang sama), nggak perlu daftarin ulang. Cuma perlu daftar ulang kalau URL-nya berubah.
+
+---
+
+## Dashboard Web
+
+Selain lewat Telegram, sekarang ada juga dashboard web-nya — bisa liat saldo/riwayat/statistik/target DAN nabung/hapus/set target langsung dari browser. Nggak perlu deploy terpisah, jalan di URL Vercel yang sama (root), misalnya `https://tabungan-bot-xxxx.vercel.app/`.
+
+**Setup:**
+1. Tambahin satu env var lagi di Vercel (**Settings → Environment Variables**, tempat yang sama kayak 5 lainnya):
+   ```
+   DASHBOARD_PASSWORD=password_rahasia_kalian
+   ```
+2. **Redeploy** — env var baru nggak kepakai kalau nggak redeploy (sama kayak catatan di step 5 di atas).
+3. Buka URL Vercel kamu di browser, masukin password itu sekali. Password ke-simpen di browser itu (localStorage) sampai kamu clear sendiri.
+
+Ini cuma satu password buat berdua (bukan akun per-orang) — cukup buat data pribadi berdua, jangan share password-nya ke orang lain karena siapapun yang tau bisa liat & ubah data tabungan kalian.
 
 ---
 

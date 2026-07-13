@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💕 Tabungan Bareng</title>
+<style>
+  :root {
+    --pink: #e8558a;
+    --pink-dark: #c73d70;
+    --bg: #fdf2f6;
+    --card: #ffffff;
+    --text: #2b2230;
+    --muted: #8a7d8a;
+    --track: #f2dce6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); padding-bottom: 40px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+    color: white; padding: 24px 16px; text-align: center;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  main { max-width: 480px; margin: 0 auto; padding: 16px; }
+  section.card {
+    background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  section.card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+  .person-row { margin-bottom: 12px; }
+  .person-row:last-child { margin-bottom: 0; }
+  .person-row .label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; }
+  .person-row .label b { color: var(--pink-dark); }
+  .bar { height: 10px; background: var(--track); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--pink); border-radius: 6px; transition: width .3s; }
+  .total-row { display: flex; justify-content: space-between; font-weight: 700; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--track); }
+  .empty { color: var(--muted); text-align: center; padding: 12px 0; font-size: 0.9rem; }
+  .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--track); gap: 8px; }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-info b { display: block; }
+  .tx-info small { color: var(--muted); }
+  .tx-del { background: none; border: none; color: #c0392b; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; }
+  .stat-line { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 4px 0; }
+  .stat-line span:last-child { font-weight: 600; }
+  form.inline { display: flex; flex-direction: column; gap: 8px; }
+  input, button {
+    font-size: 0.95rem; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--track);
+    font-family: inherit;
+  }
+  input:focus { outline: 2px solid var(--pink); border-color: transparent; }
+  button.primary {
+    background: var(--pink); color: white; border: none; font-weight: 600; cursor: pointer;
+  }
+  button.primary:active { background: var(--pink-dark); }
+  .msg { font-size: 0.85rem; text-align: center; min-height: 1.2em; margin-top: 6px; }
+  .msg.error { color: #c0392b; }
+  .msg.ok { color: #2a9d5c; }
+
+  #gate {
+    position: fixed; inset: 0; background: var(--bg); z-index: 50;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; padding: 20px;
+  }
+  #gate h1 { margin: 0 0 4px; }
+  #gate form { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
+  #app { display: none; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>💕 Tabungan Bareng</h1>
+  <form id="gateForm">
+    <input type="password" id="gatePassword" placeholder="Password" autofocus required>
+    <button type="submit" class="primary">Buka</button>
+    <div class="msg error" id="gateMsg"></div>
+  </form>
+</div>
+
+<div id="app">
+  <header><h1>💕 Tabungan Bareng</h1></header>
+  <main>
+
+    <section class="card" id="saldoCard">
+      <h2>📊 Saldo</h2>
+      <div id="saldoBody"></div>
+    </section>
+
+    <section class="card">
+      <h2>💰 Nabung</h2>
+      <form class="inline" id="nabungForm">
+        <input type="text" id="nabungNominal" placeholder="Nominal, mis. 75rb atau 1jt" required>
+        <input type="text" id="nabungNama" list="namaList" placeholder="Nama" required>
+        <datalist id="namaList"></datalist>
+        <input type="text" id="nabungKeterangan" placeholder="Keterangan (opsional)">
+        <button type="submit" class="primary">Simpan</button>
+        <div class="msg" id="nabungMsg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>📋 Riwayat</h2>
+      <div id="riwayatBody"></div>
+    </section>
+
+    <section class="card">
+      <h2>📈 Statistik</h2>
+      <div id="statistikBody"></div>
+    </section>
+
+    <section class="card">
+      <h2>🎯 Target</h2>
+      <div id="targetBody"></div>
+      <form class="inline" id="targetForm" style="margin-top:12px">
+        <input type="text" id="targetNominal" placeholder="Target baru, mis. 5jt" required>
+        <button type="submit" class="primary">Set Target</button>
+        <div class="msg" id="targetMsg"></div>
+      </form>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const IDR = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+const fmtDate = (iso) => new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+const parseAmount = (str) =>
+  parseInt(String(str).toLowerCase().replace(/\./g, "").replace(/rb|ribu/g, "000").replace(/jt|juta/g, "000000").replace(/[^0-9]/g, ""));
+
+const PW_KEY = "tabungan_dashboard_password";
+const NAMA_KEY = "tabungan_dashboard_nama";
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", ...(opts.headers || {}), "X-Dashboard-Password": localStorage.getItem(PW_KEY) || "" },
+  });
+  if (res.status === 401) {
+    localStorage.removeItem(PW_KEY);
+    showGate("Password salah, coba lagi.");
+    throw new Error("unauthorized");
+  }
+  return res.json();
+}
+
+function showGate(msg) {
+  document.getElementById("gate").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("gateMsg").textContent = msg || "";
+}
+
+document.getElementById("gateForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById("gatePassword").value;
+  localStorage.setItem(PW_KEY, pw);
+  try {
+    await loadDashboard();
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("app").style.display = "block";
+  } catch (err) {
+    // showGate udah dipanggil dari dalam api() kalau 401
+  }
+});
+
+function renderSaldo(saldo) {
+  const el = document.getElementById("saldoBody");
+  if (saldo.empty) {
+    el.innerHTML = `<div class="empty">📭 Belum ada tabungan. Mulai dengan form Nabung di bawah!</div>`;
+    return;
+  }
+  let html = saldo.perOrang.map(p => `
+    <div class="person-row">
+      <div class="label"><span>👤 ${p.nama}</span><b>${IDR(p.total)} (${p.pct}%)</b></div>
+      <div class="bar"><div style="width:${p.pct}%"></div></div>
+    </div>
+  `).join("");
+  html += `<div class="total-row"><span>🏦 Total</span><span>${IDR(saldo.total)}</span></div>`;
+  if (saldo.target > 0) {
+    html += `
+      <div class="person-row" style="margin-top:12px">
+        <div class="label"><span>🎯 Target ${IDR(saldo.target)}</span><b>${saldo.targetPct}%</b></div>
+        <div class="bar"><div style="width:${saldo.targetPct}%"></div></div>
+        <div class="msg" style="text-align:left">Sisa ${IDR(saldo.sisa)}</div>
+      </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderRiwayat(riwayat) {
+  const el = document.getElementById("riwayatBody");
+  if (!riwayat.length) {
+    el.innerHTML = `<div class="empty">📭 Belum ada transaksi</div>`;
+    return;
+  }
+  el.innerHTML = riwayat.map(t => `
+    <div class="tx-item">
+      <div class="tx-info">
+        <b>${t.nama} · ${IDR(t.jumlah)}</b>
+        <small>${t.keterangan ? t.keterangan + " · " : ""}${fmtDate(t.created_at)}</small>
+      </div>
+      <button class="tx-del" data-id="${t.id}" title="Hapus">🗑</button>
+    </div>
+  `).join("");
+  el.querySelectorAll(".tx-del").forEach(btn => {
+    btn.addEventListener("click", () => hapusTransaksi(parseInt(btn.dataset.id)));
+  });
+}
+
+function renderStatistik(s) {
+  const el = document.getElementById("statistikBody");
+  if (s.empty) {
+    el.innerHTML = `<div class="empty">📭 Belum ada data</div>`;
+    return;
+  }
+  let html = s.perOrang.map(p => `
+    <div class="person-row">
+      <div class="label"><span>👤 ${p.nama} (${p.pct}%)</span></div>
+      <div class="stat-line"><span>Total</span><span>${IDR(p.total)} · ${p.count}x</span></div>
+      <div class="stat-line"><span>Terbesar / Terkecil</span><span>${IDR(p.max)} / ${IDR(p.min)}</span></div>
+      <div class="stat-line"><span>Rata-rata</span><span>${IDR(p.avg)}</span></div>
+    </div>
+  `).join("<hr style='border:none;border-top:1px dashed var(--track);margin:10px 0'>");
+  html += `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--track)">
+      <div class="stat-line"><span>Hari menabung</span><span>${s.hariMenabung} hari</span></div>
+      <div class="stat-line"><span>Rata-rata/hari</span><span>${IDR(s.avgHarian)}</span></div>
+      <div class="stat-line"><span>Total transaksi</span><span>${s.totalTransaksi}x</span></div>
+      ${s.estimasiHari !== null ? `<div class="stat-line"><span>Estimasi capai target</span><span>${s.estimasiHari > 0 ? s.estimasiHari + " hari lagi" : "Tercapai! 🎉"}</span></div>` : ""}
+    </div>`;
+  el.innerHTML = html;
+}
+
+function renderTarget(t) {
+  const el = document.getElementById("targetBody");
+  if (!t.isSet) {
+    el.innerHTML = `<div class="empty">Belum ada target. Set di form bawah.</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="person-row">
+      <div class="label"><span>Target ${IDR(t.jumlah)}</span><b>${t.pct}%</b></div>
+      <div class="bar"><div style="width:${t.pct}%"></div></div>
+      <div class="msg" style="text-align:left">${t.sisa > 0 ? "Sisa " + IDR(t.sisa) : "Target tercapai! 🎉"}</div>
+    </div>`;
+}
+
+function updateNamaList(perOrang) {
+  document.getElementById("namaList").innerHTML = perOrang.map(p => `<option value="${p.nama}">`).join("");
+}
+
+async function loadDashboard() {
+  const data = await api("/api/dashboard?limit=30");
+  renderSaldo(data.saldo);
+  renderRiwayat(data.riwayat);
+  renderStatistik(data.statistik);
+  renderTarget(data.target);
+  updateNamaList(data.saldo.perOrang);
+}
+
+document.getElementById("nabungForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById("nabungMsg");
+  const jumlah = parseAmount(document.getElementById("nabungNominal").value);
+  const nama = document.getElementById("nabungNama").value.trim();
+  const keterangan = document.getElementById("nabungKeterangan").value.trim();
+  if (isNaN(jumlah) || jumlah <= 0) { msgEl.className = "msg error"; msgEl.textContent = "Nominal tidak valid"; return; }
+  localStorage.setItem(NAMA_KEY, nama);
+  try {
+    const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "nabung", nama, jumlah, keterangan }) });
+    if (!res.ok) { msgEl.className = "msg error"; msgEl.textContent = res.error; return; }
+    msgEl.className = "msg ok"; msgEl.textContent = "Tersimpan!";
+    document.getElementById("nabungForm").reset();
+    document.getElementById("nabungNama").value = nama;
+    await loadDashboard();
+  } catch (err) { /* 401 udah ditangani di api() */ }
+});
+
+async function hapusTransaksi(id) {
+  if (!confirm("Yakin mau hapus transaksi ini?")) return;
+  try {
+    const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "hapus", id }) });
+    if (res.ok) await loadDashboard();
+  } catch (err) { /* 401 udah ditangani di api() */ }
+}
+
+document.getElementById("targetForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById("targetMsg");
+  const jumlah = parseAmount(document.getElementById("targetNominal").value);
+  if (isNaN(jumlah) || jumlah <= 0) { msgEl.className = "msg error"; msgEl.textContent = "Nominal tidak valid"; return; }
+  try {
+    const res = await api("/api/dashboard", { method: "POST", body: JSON.stringify({ action: "target", jumlah }) });
+    if (!res.ok) { msgEl.className = "msg error"; msgEl.textContent = res.error; return; }
+    msgEl.className = "msg ok"; msgEl.textContent = "Target diperbarui!";
+    document.getElementById("targetForm").reset();
+    await loadDashboard();
+  } catch (err) { /* 401 udah ditangani di api() */ }
+});
+
+// ── init ──
+(function init() {
+  document.getElementById("nabungNama").value = localStorage.getItem(NAMA_KEY) || "";
+  if (localStorage.getItem(PW_KEY)) {
+    loadDashboard().then(() => {
+      document.getElementById("gate").style.display = "none";
+      document.getElementById("app").style.display = "block";
+    }).catch(() => {});
+  } else {
+    showGate();
+  }
+})();
+</script>
+</body>
+</html>
