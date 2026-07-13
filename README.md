@@ -105,7 +105,7 @@ Selain lewat Telegram, sekarang ada juga dashboard web-nya — bisa liat saldo/r
    DASHBOARD_PASSWORD=password_rahasia_kalian
    ```
 2. **Redeploy** — env var baru nggak kepakai kalau nggak redeploy (sama kayak catatan di step 5 di atas).
-3. Buka URL Vercel kamu di browser, masukin password itu sekali. Password ke-simpen di browser itu (localStorage) sampai kamu clear sendiri.
+3. Buka URL Vercel kamu di browser, masukin password itu sekali. Password ke-simpen di browser/HP itu (localStorage) dan auto-login terus tiap buka lagi — **sampai 30 hari nggak dibuka** (otomatis minta password lagi), atau kamu logout manual lewat tombol ⎋ di pojok kanan atas.
 
 Ini cuma satu password buat berdua (bukan akun per-orang) — cukup buat data pribadi berdua, jangan share password-nya ke orang lain karena siapapun yang tau bisa liat & ubah data tabungan kalian.
 

@@ -376,6 +376,8 @@ const initials = (s) => (s || "?").trim().slice(0, 2).toUpperCase();
 
 const PW_KEY = "tabungan_dashboard_password";
 const NAMA_KEY = "tabungan_dashboard_nama";
+const AUTH_KEY = "tabungan_dashboard_auth_at";
+const AUTH_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // auto-logout kalau nggak dipakai 30 hari
 let lastData = null;
 
 // ── toast ──
@@ -402,9 +404,11 @@ async function api(path, opts = {}) {
   });
   if (res.status === 401) {
     localStorage.removeItem(PW_KEY);
+    localStorage.removeItem(AUTH_KEY);
     showGate("Password salah, coba lagi.");
     throw new Error("unauthorized");
   }
+  if (res.ok) localStorage.setItem(AUTH_KEY, String(Date.now()));
   return res.json();
 }
 
@@ -426,6 +430,7 @@ document.getElementById("gateForm").addEventListener("submit", async (e) => {
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem(PW_KEY);
+  localStorage.removeItem(AUTH_KEY);
   showGate();
 });
 
@@ -734,7 +739,15 @@ fileInput.addEventListener("change", async () => {
 
 // ── init ──
 (function init() {
-  if (localStorage.getItem(PW_KEY)) {
+  const hadSession = !!localStorage.getItem(PW_KEY);
+  const authAt = parseInt(localStorage.getItem(AUTH_KEY), 10);
+  const expired = hadSession && (!authAt || (Date.now() - authAt) > AUTH_MAX_AGE_MS);
+
+  if (expired) {
+    localStorage.removeItem(PW_KEY);
+    localStorage.removeItem(AUTH_KEY);
+    showGate("Sesi login udah lewat 30 hari, masukin password lagi ya.");
+  } else if (hadSession) {
     loadDashboard().then(() => {
       document.getElementById("gate").style.display = "none";
       document.getElementById("app").style.display = "block";
