@@ -64,7 +64,7 @@ tabungan-bot/
 ### 3. Bikin OpenRouter API Key (buat fitur scan foto)
 1. Buka [openrouter.ai/keys](https://openrouter.ai/keys) → Sign in (bisa pakai Google) → Create Key
 2. Salin → ini `OPENROUTER_KEY`
-3. Fitur scan pakai model gratis (`google/gemini-2.0-flash-exp:free` secara default) — nggak perlu isi billing. Kalau model gratisnya lagi rate-limited/di-deprecate OpenRouter, ganti lewat env var `OPENROUTER_MODEL` (cek model vision gratis lain di [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0))
+3. Fitur scan pakai model vision gratis — nggak perlu isi billing. Model gratis di OpenRouter suka berubah/di-retire, jadi kodenya otomatis coba beberapa model gratis lain kalau yang utama nggak tersedia (lihat `OPENROUTER_MODELS` di `lib/bot.js` / `api/dashboard.js`). Kalau semuanya kena, set env var `OPENROUTER_MODEL` ke model vision gratis yang masih aktif (cek di [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0))
 
 ### 4. Cari Chat ID kalian (opsional, biar bot private)
 1. Telegram → cari **@userinfobot** → `/start` → catat **Id**

@@ -4,7 +4,18 @@ const https = require("https");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const PASSWORD = process.env.DASHBOARD_PASSWORD;
 const OPENROUTER_KEY = process.env.OPENROUTER_KEY;
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-exp:free";
+
+// OpenRouter rotates/retires its free-tier models often (the previous
+// default, google/gemini-2.0-flash-exp:free, disappeared entirely — "No
+// endpoints found"). Try OPENROUTER_MODEL first if set, then fall back
+// through a short list of other free vision-capable models instead of
+// hard-depending on any single one.
+const OPENROUTER_MODELS = [
+  process.env.OPENROUTER_MODEL,
+  "meta-llama/llama-3.2-11b-vision-instruct:free",
+  "qwen/qwen2.5-vl-32b-instruct:free",
+  "mistralai/mistral-small-3.1-24b-instruct:free",
+].filter(Boolean);
 
 // plain parseInt() truncates at the first non-digit — the model sometimes
 // formats the nominal with a "." thousands separator (e.g. "50.000") despite
@@ -12,24 +23,9 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flas
 // instead of 50000. Strip every non-digit before parsing instead.
 const parseNominal = (str) => parseInt(String(str).replace(/[^0-9]/g, ""), 10);
 
-// Sama persis logic-nya kayak extractNominalFromImage di lib/bot.js, biar
-// hasil scan dari web dan dari Telegram konsisten. Lewat OpenRouter (bukan
-// Gemini langsung) supaya bisa pakai model vision gratis tanpa perlu ngurus
-// billing/quota Google Cloud sendiri.
-async function extractNominalFromImage(base64, mimeType) {
-  const prompt = `Kamu membantu tracking tabungan. Lihat gambar ini dan ekstrak nominal uang yang ditabung/ditransfer.
-
-Aturan:
-- Cari angka nominal transfer, pembayaran, atau tabungan
-- Abaikan biaya admin, saldo sebelumnya, atau saldo akhir
-- Kembalikan HANYA angka bulat tanpa titik/koma/Rp, contoh: 50000
-- Kalau ada beberapa nominal, ambil yang paling relevan (nominal transfer utama)
-- Kalau tidak ada nominal yang jelas, kembalikan: TIDAK_DITEMUKAN
-
-Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
-
+function callOpenRouter(model, base64, mimeType, prompt) {
   const body = JSON.stringify({
-    model: OPENROUTER_MODEL,
+    model,
     temperature: 0,
     max_tokens: 50,
     messages: [{
@@ -60,7 +56,9 @@ Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
         try {
           const json = JSON.parse(data);
           if (json.error) {
-            return reject(new Error(`OpenRouter API error ${json.error.code}: ${json.error.message}`));
+            const err = new Error(`OpenRouter API error ${json.error.code}: ${json.error.message}`);
+            err.noEndpoints = json.error.code === 404 && /no endpoints found/i.test(json.error.message || "");
+            return reject(err);
           }
           const choice = json.choices?.[0];
           if (!choice) {
@@ -78,6 +76,35 @@ Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
     req.write(body);
     req.end();
   });
+}
+
+// Sama persis logic-nya kayak extractNominalFromImage di lib/bot.js, biar
+// hasil scan dari web dan dari Telegram konsisten. Lewat OpenRouter (bukan
+// Gemini langsung) supaya bisa pakai model vision gratis tanpa perlu ngurus
+// billing/quota Google Cloud sendiri.
+async function extractNominalFromImage(base64, mimeType) {
+  const prompt = `Kamu membantu tracking tabungan. Lihat gambar ini dan ekstrak nominal uang yang ditabung/ditransfer.
+
+Aturan:
+- Cari angka nominal transfer, pembayaran, atau tabungan
+- Abaikan biaya admin, saldo sebelumnya, atau saldo akhir
+- Kembalikan HANYA angka bulat tanpa titik/koma/Rp, contoh: 50000
+- Kalau ada beberapa nominal, ambil yang paling relevan (nominal transfer utama)
+- Kalau tidak ada nominal yang jelas, kembalikan: TIDAK_DITEMUKAN
+
+Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
+
+  let lastErr;
+  for (const model of OPENROUTER_MODELS) {
+    try {
+      return await callOpenRouter(model, base64, mimeType, prompt);
+    } catch (e) {
+      lastErr = e;
+      if (!e.noEndpoints) throw e; // real error (auth, quota, etc) — don't mask it by trying more models
+      console.error(`Model ${model} unavailable, trying next:`, e.message);
+    }
+  }
+  throw lastErr;
 }
 
 // Browser punya nggak punya identitas Telegram, jadi transaksi/target yang
