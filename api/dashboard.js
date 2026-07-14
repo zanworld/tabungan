@@ -12,9 +12,10 @@ const OPENROUTER_KEY = process.env.OPENROUTER_KEY;
 // hard-depending on any single one.
 const OPENROUTER_MODELS = [
   process.env.OPENROUTER_MODEL,
-  "meta-llama/llama-3.2-11b-vision-instruct:free",
-  "qwen/qwen2.5-vl-32b-instruct:free",
-  "mistralai/mistral-small-3.1-24b-instruct:free",
+  "nvidia/nemotron-nano-12b-v2-vl:free",   // vision-language, tuned for document/OCR tasks
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
 ].filter(Boolean);
 
 // plain parseInt() truncates at the first non-digit — the model sometimes
