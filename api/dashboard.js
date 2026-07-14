@@ -3,16 +3,19 @@ const https = require("https");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const PASSWORD = process.env.DASHBOARD_PASSWORD;
-const GEMINI_KEY = process.env.GEMINI_KEY;
+const OPENROUTER_KEY = process.env.OPENROUTER_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-exp:free";
 
-// plain parseInt() truncates at the first non-digit — Gemini sometimes formats
-// the nominal with a "." thousands separator (e.g. "50.000") despite the
-// prompt asking it not to, so parseInt("50.000") silently returns 50 instead
-// of 50000. Strip every non-digit before parsing instead.
+// plain parseInt() truncates at the first non-digit — the model sometimes
+// formats the nominal with a "." thousands separator (e.g. "50.000") despite
+// the prompt asking it not to, so parseInt("50.000") silently returns 50
+// instead of 50000. Strip every non-digit before parsing instead.
 const parseNominal = (str) => parseInt(String(str).replace(/[^0-9]/g, ""), 10);
 
 // Sama persis logic-nya kayak extractNominalFromImage di lib/bot.js, biar
-// hasil scan dari web dan dari Telegram konsisten.
+// hasil scan dari web dan dari Telegram konsisten. Lewat OpenRouter (bukan
+// Gemini langsung) supaya bisa pakai model vision gratis tanpa perlu ngurus
+// billing/quota Google Cloud sendiri.
 async function extractNominalFromImage(base64, mimeType) {
   const prompt = `Kamu membantu tracking tabungan. Lihat gambar ini dan ekstrak nominal uang yang ditabung/ditransfer.
 
@@ -26,16 +29,30 @@ Aturan:
 Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
 
   const body = JSON.stringify({
-    contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64 } }, { text: prompt }] }],
-    generationConfig: { maxOutputTokens: 50, temperature: 0 },
+    model: OPENROUTER_MODEL,
+    temperature: 0,
+    max_tokens: 50,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: prompt },
+        { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64}` } },
+      ],
+    }],
   });
 
   return new Promise((resolve, reject) => {
     const req = https.request({
-      hostname: "generativelanguage.googleapis.com",
-      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      hostname: "openrouter.ai",
+      path: "/api/v1/chat/completions",
       method: "POST",
-      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "Authorization": `Bearer ${OPENROUTER_KEY}`,
+        "HTTP-Referer": "https://github.com/zanworld/tabungan",
+        "X-Title": "Tabungan Bareng",
+      },
     }, (res) => {
       let data = "";
       res.on("data", (c) => (data += c));
@@ -43,16 +60,16 @@ Jawab hanya dengan angka atau TIDAK_DITEMUKAN.`;
         try {
           const json = JSON.parse(data);
           if (json.error) {
-            return reject(new Error(`Gemini API error ${json.error.code}: ${json.error.message}`));
+            return reject(new Error(`OpenRouter API error ${json.error.code}: ${json.error.message}`));
           }
-          const candidate = json.candidates?.[0];
-          if (!candidate) {
-            return reject(new Error(`Gemini returned no candidates: ${data.slice(0, 500)}`));
+          const choice = json.choices?.[0];
+          if (!choice) {
+            return reject(new Error(`OpenRouter returned no choices: ${data.slice(0, 500)}`));
           }
-          if (candidate.finishReason && candidate.finishReason !== "STOP") {
-            return reject(new Error(`Gemini finishReason: ${candidate.finishReason}`));
+          if (choice.finish_reason && !["stop", "length"].includes(choice.finish_reason)) {
+            return reject(new Error(`OpenRouter finish_reason: ${choice.finish_reason}`));
           }
-          const text = candidate.content?.parts?.[0]?.text?.trim() || "TIDAK_DITEMUKAN";
+          const text = choice.message?.content?.trim() || "TIDAK_DITEMUKAN";
           resolve(text);
         } catch (e) { reject(e); }
       });
@@ -191,7 +208,7 @@ async function handlePost(req, res) {
   }
 
   if (body.action === "scan") {
-    if (!GEMINI_KEY) return res.status(500).json({ ok: false, error: "GEMINI_KEY belum diset" });
+    if (!OPENROUTER_KEY) return res.status(500).json({ ok: false, error: "OPENROUTER_KEY belum diset" });
     const image = String(body.image || "");
     if (!image) return res.status(400).json({ ok: false, error: "image tidak ada" });
     if (image.length > 8_000_000) return res.status(400).json({ ok: false, error: "gambar terlalu besar" });

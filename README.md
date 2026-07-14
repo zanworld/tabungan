@@ -1,6 +1,6 @@
 # 🐷 Bot Tabungan Bareng
 
-Bot Telegram untuk tracking tabungan berdua. Tombol interaktif, scan foto struk/transfer otomatis (Gemini Vision), semua lewat chat.
+Bot Telegram untuk tracking tabungan berdua. Tombol interaktif, scan foto struk/transfer otomatis (lewat OpenRouter, model vision gratis), semua lewat chat.
 
 **v2:** dulu jalan mode *polling* di Railway (trial ~sebulan, abis itu bot mati dan data ikut hilang). Sekarang jalan mode **webhook** di **Vercel** — nggak time-boxed, dan nggak butuh proses nyala 24 jam.
 
@@ -9,7 +9,7 @@ Bot Telegram untuk tracking tabungan berdua. Tombol interaktif, scan foto struk/
 | Fitur | Keterangan |
 |---|---|
 | 💰 Nabung | Tombol nominal cepat atau ketik manual (`75rb`, `1jt`, dst) |
-| 📸 Scan struk | Kirim foto/screenshot transfer, nominal dibaca otomatis pakai Gemini Vision |
+| 📸 Scan struk | Kirim foto/screenshot transfer, nominal dibaca otomatis pakai model vision gratis (OpenRouter) |
 | 📊 Saldo | Total & breakdown per orang |
 | 📋 Riwayat | 8 transaksi terakhir |
 | 📈 Statistik | Rata-rata harian, terbesar/terkecil, estimasi capai target |
@@ -61,9 +61,10 @@ tabungan-bot/
 4. New Query lagi → paste isi **`schema_webhook_addon.sql`** → Run (ini yang baru, jangan skip)
 5. **Project Settings → API** → salin **Project URL** (`SUPABASE_URL`) dan **anon public key** (`SUPABASE_KEY`)
 
-### 3. Bikin Gemini API Key (buat fitur scan foto)
-1. Buka [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → Sign in → Create API Key
-2. Salin → ini `GEMINI_KEY`
+### 3. Bikin OpenRouter API Key (buat fitur scan foto)
+1. Buka [openrouter.ai/keys](https://openrouter.ai/keys) → Sign in (bisa pakai Google) → Create Key
+2. Salin → ini `OPENROUTER_KEY`
+3. Fitur scan pakai model gratis (`google/gemini-2.0-flash-exp:free` secara default) — nggak perlu isi billing. Kalau model gratisnya lagi rate-limited/di-deprecate OpenRouter, ganti lewat env var `OPENROUTER_MODEL` (cek model vision gratis lain di [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0))
 
 ### 4. Cari Chat ID kalian (opsional, biar bot private)
 1. Telegram → cari **@userinfobot** → `/start` → catat **Id**
@@ -78,7 +79,7 @@ tabungan-bot/
    BOT_TOKEN=...
    SUPABASE_URL=...
    SUPABASE_KEY=...
-   GEMINI_KEY=...
+   OPENROUTER_KEY=...
    ALLOWED_CHAT_ID=id_kamu,id_renti
    ```
 5. Klik **Deploy**. Setelah selesai, catat URL-nya (mis. `https://tabungan-bot-xxxx.vercel.app`)
