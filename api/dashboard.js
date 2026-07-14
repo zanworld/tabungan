@@ -5,6 +5,12 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const PASSWORD = process.env.DASHBOARD_PASSWORD;
 const GEMINI_KEY = process.env.GEMINI_KEY;
 
+// plain parseInt() truncates at the first non-digit — Gemini sometimes formats
+// the nominal with a "." thousands separator (e.g. "50.000") despite the
+// prompt asking it not to, so parseInt("50.000") silently returns 50 instead
+// of 50000. Strip every non-digit before parsing instead.
+const parseNominal = (str) => parseInt(String(str).replace(/[^0-9]/g, ""), 10);
+
 // Sama persis logic-nya kayak extractNominalFromImage di lib/bot.js, biar
 // hasil scan dari web dan dari Telegram konsisten.
 async function extractNominalFromImage(base64, mimeType) {
@@ -182,7 +188,7 @@ async function handlePost(req, res) {
 
     try {
       const result = await extractNominalFromImage(image, body.mimeType || "image/jpeg");
-      const jumlah = parseInt(result);
+      const jumlah = parseNominal(result);
       if (result === "TIDAK_DITEMUKAN" || isNaN(jumlah) || jumlah <= 0) {
         return res.status(200).json({ ok: true, detected: false });
       }
